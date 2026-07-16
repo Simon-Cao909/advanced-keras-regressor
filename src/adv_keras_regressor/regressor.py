@@ -1,7 +1,7 @@
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, validate_data
 from scipy.sparse import issparse
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, accuracy_score
 from tensorflow import keras
 from tensorflow.keras import layers as kl
 import numpy as np
@@ -46,6 +46,7 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         learning_rate=1e-3,
         random_state=None,
         shuffle=True,
+        is_classifier=False,
     ):
         '''
         Attributes
@@ -69,6 +70,8 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         - learning_rate (float, default=1e-4): The learning rate for training
         - random_state (int or None, default=None): The random state. Used for reproducible results
         - shuffle (bool, default=True): Whether to shuffle the data before training
+        - is_classifier (bool, default=False): Whether the model is a classifier
+                                               This will only change how the scoring behaves
         '''
         self.model_structure = model_structure
         self.input_shape = input_shape
@@ -83,6 +86,7 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         self.learning_rate = learning_rate
         self.random_state = random_state
         self.shuffle = shuffle
+        self.is_classifier = is_classifier
 
 
     ### HELPER FUNCTIONS ###
@@ -629,14 +633,19 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
 
     def score(self, X, y):
         '''
-        Returns the R^2 score for the model if applicable
+        Returns the scoring of the model if applicable
+        If the model is a classifier, the accuracy score will be returned
+        If the model is a regressor, the R^2 score will be returned
 
         :param X (array-like): The features of shape (n_samples, ...)
         :param y (array-like): The labels of shape (n_samples, ...) or (n_samples,)
 
-        :return (float or ndarray of floats or None): The R^2 score or ndarray of R^2 scores
+        :return (float or ndarray of floats or None): The score or ndarray of scores
         '''
         if len(self.output_shape_) <= 2:
-            return r2_score(y, self.predict(X))
+            if self.is_classifier:
+                return accuracy_score(y, self.predict(X))
+            else:
+                return r2_score(y, self.predict(X))
         else:
-            raise ValueError("R^2 score is only defined for vector-valued outputs")
+            raise ValueError("Scoring is only defined for vector-valued outputs")

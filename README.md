@@ -100,6 +100,8 @@ The required and optional attributes during initialization
 - learning_rate (float, default=1e-4): The learning rate for training
 - random_state (int or None, default=None): The random state. Used for reproducible results
 - shuffle (bool, default=True): Whether to shuffle the data before training
+- is_classifier (bool, default=False): Whether the model is a classifier
+                                       This will only change how the scoring behaves
 
 --
 
@@ -127,8 +129,10 @@ The required and optional attributes during initialization
 - :return (numpy.ndarray): The labels of shape (n_samples, ...) or (n_samples,) (for one output case)
 
 .score()
-- Returns the R^2 score for the model if applicable
+- Returns the scoring of the model if applicable
+  - If the model is a classifier, the accuracy score will be returned
+  - If the model is a regressor, the R^2 score will be returned
 - Parameters
   - X (array-like) - The features of shape (n_samples, ...)
   - y (array-like) - The labels of shape (n_samples, ...) or (n_samples,)
-- :return (float or ndarray of floats or None): The R^2 score or ndarray of R^2 scores
+- :return (float or ndarray of floats or None): The score or ndarray of scores

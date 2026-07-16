@@ -33,7 +33,8 @@ model = AdvKerasRegressor(model_structure = [
                           loss = 'categorical_crossentropy',
                           optimizer = 'adam',
                           batch_size = 128,
-                          verbose = 1,)
+                          verbose = 1,
+                          is_classifier = True)
 
 model.fit(x_train,y_train)
 
