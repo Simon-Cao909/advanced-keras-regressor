@@ -536,7 +536,7 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         
         self.model_ = self.build_model()
 
-        if len(self.output_shape_) <= 2:
+        if len(self.output_shape_) <= 2 and len(self.input_shape_) <= 2:
             X, y = validate_data(
                 self,
                 X,
@@ -610,7 +610,7 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         check_is_fitted(self, "model_")
         X = np.array(X)
 
-        if len(self.output_shape_) <= 2:
+        if len(self.output_shape_) <= 2 and len(self.input_shape_) <= 2:
             X = check_array(X, accept_sparse=False, dtype=np.float32)
             X = validate_data(self,X,reset=False)
 
