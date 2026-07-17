@@ -1,34 +1,17 @@
-from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, validate_data
+from sklearn.base import BaseEstimator
+from sklearn.utils.validation import check_array, check_is_fitted, validate_data
 from scipy.sparse import issparse
-from sklearn.metrics import r2_score, accuracy_score
 from tensorflow import keras
 from tensorflow.keras import layers as kl
 import numpy as np
 
-from .sklearn_layer import SKlearnLayer
+from .tools.sklearn_layer import SKlearnLayer
+from .tools.check_shapes import shapes_equal
 
-def shapes_equal(a, b):
+class SKGraphEstimator(BaseEstimator):
     '''
-    Checks if the shapes of two arrays are equal
-
-    :param a (array-like): The first array
-    :param b (array-like): The second array
-
-    :returns (bool): True if the shapes are equal
-                     False otherwise
-    '''
-    if len(a) != len(b):
-        return False
-    return all(
-        (x == y) or (x is None) or (y is None)
-        for x, y in zip(a, b)
-    )
-
-class AdvKerasRegressor(RegressorMixin,BaseEstimator):
-    '''
-    AdvKerasRegressor is a machine learning algorithm that combines the user-friendly 
-    features of MLPRegressor and the versatility of Tensorflow with Keras
+    SKGraphEstimator is a machine learning algorithm that combines the user-friendly 
+    features of scikit-learn regressors and the versatility of Tensorflow with Keras
     '''
     
     def __init__(
@@ -42,11 +25,11 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         validation_split=0.1,
         verbose=1,
         loss="mse",
+        metrics=None,
         optimizer="adam",
         learning_rate=1e-3,
         random_state=None,
         shuffle=True,
-        is_classifier=False,
     ):
         '''
         Attributes
@@ -66,12 +49,11 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
                                     with validation_split being the fraction of validation data
         - verbose (int): If 0, nothing is printed. If 1, the process of training is printed
         - loss (str or callable, default='mse'): The loss function used. See Keras for custom ones
+        - metrics (list, tuple, dict, or None, default=None): The metrics tracked during training
         - optimizer (str, default='adam'): The optimizer used in training. See Keras for possibilities
         - learning_rate (float, default=1e-4): The learning rate for training
         - random_state (int or None, default=None): The random state. Used for reproducible results
         - shuffle (bool, default=True): Whether to shuffle the data before training
-        - is_classifier (bool, default=False): Whether the model is a classifier
-                                               This will only change how the scoring behaves
         '''
         self.model_structure = model_structure
         self.input_shape = input_shape
@@ -82,11 +64,11 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         self.validation_split = validation_split
         self.verbose = verbose
         self.loss = loss
+        self.metrics = metrics
         self.optimizer = optimizer
         self.learning_rate = learning_rate
         self.random_state = random_state
         self.shuffle = shuffle
-        self.is_classifier = is_classifier
 
 
     ### HELPER FUNCTIONS ###
@@ -507,7 +489,7 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
 
         # Creates and compiles the model
         model = keras.Model(inputs, outputs)
-        model.compile(optimizer=self._make_optimizer(),loss=self.loss)
+        model.compile(optimizer=self._make_optimizer(),loss=self.loss,metrics=self.metrics)
 
         return model
 
@@ -519,7 +501,7 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
         :param y (array-like): The labels of shape (n_samples, ...) or (n_samples,)
         :param fit_params: Any additional fit parameters used in Keras
 
-        :return (AdvKerasRegressor): The trained AdvKerasRegressor
+        :return (self): The trained estimator
         '''
         if issparse(X):
             raise ValueError("Sparse input is not supported")
@@ -630,22 +612,3 @@ class AdvKerasRegressor(RegressorMixin,BaseEstimator):
             return pred.ravel()
 
         return pred
-
-    def score(self, X, y):
-        '''
-        Returns the scoring of the model if applicable
-        If the model is a classifier, the accuracy score will be returned
-        If the model is a regressor, the R^2 score will be returned
-
-        :param X (array-like): The features of shape (n_samples, ...)
-        :param y (array-like): The labels of shape (n_samples, ...) or (n_samples,)
-
-        :return (float or ndarray of floats or None): The score or ndarray of scores
-        '''
-        if len(self.output_shape_) <= 2:
-            if self.is_classifier:
-                return accuracy_score(y, self.predict(X))
-            else:
-                return r2_score(y, self.predict(X))
-        else:
-            raise ValueError("Scoring is only defined for vector-valued outputs")

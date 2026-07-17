@@ -1,4 +1,4 @@
-from adv_keras_regressor.regressor import AdvKerasRegressor
+from sk_graph_estimator.classifier import SKGraphClassifier
 from tensorflow import keras
 
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
@@ -12,7 +12,7 @@ x_test = x_test.reshape(xte_shape[0],xte_shape[1]*xte_shape[2])
 y_train = keras.utils.to_categorical(y_train,10)
 y_test = keras.utils.to_categorical(y_test,10)
 
-model = AdvKerasRegressor(model_structure = [
+model = SKGraphClassifier(model_structure = [
                                                 {'type':'D', 'units':128, 'activation':'relu'},
                                                 {'type':'d', 'rate':0.1},
                                                 {'type':'D', 'units':64, 'activation':'relu'},
@@ -26,9 +26,8 @@ model = AdvKerasRegressor(model_structure = [
                           loss = 'categorical_crossentropy',
                           optimizer = 'adam',
                           batch_size = 128,
-                          verbose = 1,
-                          is_classifier = True)
+                          verbose = 1,)
 
 model.fit(x_train,y_train)
 
-print("R^2 score:", model.score(x_test,y_test))
+print("Accuracy score:", model.score(x_test,y_test))

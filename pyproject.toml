@@ -3,8 +3,8 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "adv_keras_regressor"
-version = "1.0.0"
+name = "sk_graph_estimator"
+version = "1.1.0"
 description = "A Python Keras wrapper that supports modern architectures and Scikit-learn workflows"
 readme = "README.md"
 requires-python = ">=3.10"

@@ -1,13 +1,13 @@
-# advanced-keras-regressor
-AdvKerasRegressor is a neural network builder that combines scikit-learn's user-friendly features with Keras's versatility. You can create very complex networks easily, allowing you to test vastly different architectures quickly and efficiently. Further, as it is a subclass of scikit-learn's BaseEstimator, it can be used in things like GridSearchCV.
+# sk-graph-estimator
+SKGraphEstimator is a neural network builder that combines scikit-learn's user-friendly features with Keras's versatility. You can create very complex networks easily, allowing you to test vastly different architectures quickly and efficiently. Further, as it is a subclass of scikit-learn's BaseEstimator, it can be used in things like GridSearchCV.
 
 --
 
 # Example code
 ```python
-from adv_keras_regressor import AdvKerasRegressor
+from sk_graph_estimator.estimator import SKGraphEstimator
 
-model = AdvKerasRegressor(model_structure=[
+model = SKGraphEstimator(model_structure=[
     {
         'type':'I',
         'branches':[
@@ -46,7 +46,7 @@ Often, when performing research, it's useful to test different machine learning 
 
 However, when trying to work with neural networks, I encountered a block. I either had to use sklearn's MLPRegressor, which significantly limits your ability, or attempt to work with KerasRegressor from scikeras, which still requires you to rewrite dozens of lines of code when attempting to use a different model architecture. Debugging was a chore, and for more complex networks like Inception, ResNet, and Xception, it was a pain to code and read.
 
-This is why I created AdvKerasRegressor. It allows you to easily specify complex model structures with something resembling a flow chart, making it significantly more user-friendly while maintaining most of Keras's versatility. You can create complex and more readable just by coding something like:
+This is why I created SKGraphEstimator. It allows you to easily specify complex model structures with something resembling a flow chart, making it significantly more user-friendly while maintaining most of Keras's versatility. You can create complex and more readable just by coding something like:
 ```python
 [
     {'type':'C', 'filters':32,
@@ -96,6 +96,7 @@ The required and optional attributes during initialization
                             with validation_split being the fraction of validation data
 - verbose (int): If 0, nothing is printed. If 1, the process of training is printed
 - loss (str or callable, default='mse'): The loss function used. See Keras for custom ones
+- metrics (list, tuple, dict, or None, default=None): The metrics tracked during training
 - optimizer (str, default='adam'): The optimizer used in training. See Keras for possibilities
 - learning_rate (float, default=1e-4): The learning rate for training
 - random_state (int or None, default=None): The random state. Used for reproducible results
@@ -119,7 +120,7 @@ The required and optional attributes during initialization
   - X (array-like) - The features of shape (n_samples, ...)
   - y (array-like) - The labels of shape (n_samples, ...) or (n_samples,)
   - **fit_params - Any additional parameters used in Keras when calling keras.Model.fit(...)
-- :return (AdvKerasRegressor): The trained AdvKerasRegressor
+- :return (self): The trained estimator
 
 .predict()
 - This predicts the labels given the features
@@ -130,8 +131,8 @@ The required and optional attributes during initialization
 
 .score()
 - Returns the scoring of the model if applicable
-  - If the model is a classifier, the accuracy score will be returned
-  - If the model is a regressor, the R^2 score will be returned
+  - If you are using SKGraphClassifier, the accuracy score will be returned
+  - If you are using SKGraphEstimator, the R^2 score will be returned
 - Parameters
   - X (array-like) - The features of shape (n_samples, ...)
   - y (array-like) - The labels of shape (n_samples, ...) or (n_samples,)
