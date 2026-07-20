@@ -150,6 +150,12 @@ class SKGraphEstimator(BaseEstimator):
         raise ValueError(f"Projection not supported for target_shape {target_shape}")
 
     def _get_callbacks(self):
+        '''
+        Creates and returns a list of callbacks
+        Currently only supports early stopping
+
+        :return (list): A list of callbacks
+        '''
         callbacks = []
 
         if self.early_stopping:

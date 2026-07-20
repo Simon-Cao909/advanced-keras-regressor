@@ -8,17 +8,85 @@ from .tools.sae import SAE
 from .tools.vae import VAE, sampling
 
 class SKGraphAutoencoder(SKGraphEstimator):
-    def __init__(self,encoder_structure,decoder_structure,model_type='standard',**kwargs):
+    '''
+    SKGraphAutoencoder is a subclass of SKGraphEstimator that is meant to
+    create standard and variational autoencoders
+    '''
+    def __init__(
+        self,
+        encoder_structure,
+        decoder_structure,
+        model_type='standard',
+        build_setting="normal",
+        input_shape=None,
+        epochs=100,
+        batch_size=32,
+        early_stopping=True,
+        n_iter_no_change=10,
+        validation_split=0.1,
+        verbose=1,
+        optimizer="adam",
+        learning_rate=1e-3,
+        random_state=None,
+        shuffle=True,
+    ):
+        '''
+        Attributes
+        - encoder_structure (list or tuple): model structure for the encoder
+                                             See architecture.md for how to format this
+        - decoder_structure (list or tuple): model structure for the decoder
+                                             See architecture.md for how to format this
+        - model_type (str, default='standard'): Specifies the autoencoder type
+                                                Must be either 'standard' or 'variational'
+        - build_setting (str, default='normal'): Decides the format of model_structure
+                                                 Must be either 'normal' or 'quick'
+                                                 See architecture.md for more information
+        - input_shape (tuple, default=None): The input shape
+                                             If None, it will be guessed from the feature shape
+        - epochs (int, default=100): The number of epochs to train the model for
+        - batch_size (int, default=32): The batch size for training
+        - early_stopping (bool, default=True): Whether the model should stop training early if validation
+                                               loss doesn't drop after n_iter_no_change iterations
+        - n_iter_no_change (int, default=10): The amount of iterations without validation 
+                                              loss change until the model stops training
+                                              (only matters if early_stopping is True)
+        - validation_split (float): Should be between 0 and 1
+                                    This will determine how the training and validation data are split
+                                    with validation_split being the fraction of validation data
+        - verbose (int): If 0, nothing is printed. If 1, the process of training is printed
+        - optimizer (str, default='adam'): The optimizer used in training. See Keras for possibilities
+        - learning_rate (float, default=1e-4): The learning rate for training
+        - random_state (int or None, default=None): The random state. Used for reproducible results
+        - shuffle (bool, default=True): Whether to shuffle the data before training
+        '''
         model_structure = list(encoder_structure) + list(decoder_structure)
 
-        super().__init__(model_structure=model_structure,**kwargs)
+        super().__init__(model_structure=model_structure,
+                         build_setting=build_setting,
+                         input_shape=input_shape,
+                         epochs=epochs,
+                         batch_size=batch_size,
+                         early_stopping=early_stopping,
+                         n_iter_no_change=n_iter_no_change,
+                         validation_split=validation_split,
+                         verbose=verbose,
+                         optimizer=optimizer,
+                         learning_rate=learning_rate,
+                         random_state=random_state,
+                         shuffle=shuffle)
 
         self.encoder_structure = encoder_structure
         self.decoder_structure = decoder_structure
 
         self.model_type = model_type
 
-    def build_encoder(self):
+    def _build_encoder(self):
+        '''
+        Builds the encoder half of the autoencoder using
+        the given encoder_structure
+
+        :return (keras.Model): The encoder model
+        '''
         model_type = self.model_type.lower()
         input_shape = self.input_shape_
 
@@ -47,7 +115,13 @@ class SKGraphAutoencoder(SKGraphEstimator):
         self.latent_shape_ = keras.backend.int_shape(latent)[1:]
         self.encoder_ = keras.Model(inputs=encoder_inputs,outputs=encoder_outputs)
     
-    def build_decoder(self):
+    def _build_decoder(self):
+        '''
+        Builds the decoder half of the model structure using
+        the given decoder_structure
+
+        :return (keras.Model): The decoder model
+        '''
         decoder_inputs = keras.Input(shape=self.latent_shape_)
 
         x = decoder_inputs
@@ -64,11 +138,17 @@ class SKGraphAutoencoder(SKGraphEstimator):
         self.decoder_ = keras.Model(inputs=decoder_inputs,outputs=decoded)
 
     def build_model(self):
+        '''
+        Builds and compiles the autoencoder using the given
+        encoder_structure and decoder_structure
+
+        :return (keras.Model): The autoencoder model
+        '''
         self._validate_hyperparams()
         model_type = self.model_type.lower()
 
-        self.build_encoder()
-        self.build_decoder()
+        self._build_encoder()
+        self._build_decoder()
 
         if model_type == 'standard':
             AutoEncoder = SAE
@@ -81,6 +161,15 @@ class SKGraphAutoencoder(SKGraphEstimator):
         return model
     
     def fit(self, X, y = None, **fit_params):
+        '''
+        Trains the model on the given features
+
+        :param X (array-like): The features of shape (n_samples, ...)
+        :param y (None): Leave this as None
+        :param fit_params: Any additional fit parameters used in Keras
+
+        :return (self): The trained autoencoder
+        '''
         X = np.array(X)
 
         if self.random_state is not None:
@@ -122,5 +211,13 @@ class SKGraphAutoencoder(SKGraphEstimator):
         return self
     
     def score(self, X, y=None):
+        '''
+        Scores the model based on how it performs on given data
+
+        :param X (array-like): The features of shape (n_samples, ...)
+        :param y (None): Leave this as None
+
+        :return (float): Negative MSE between X and the prediction
+        '''
         pred = self.predict(X)
         return -np.mean((X - pred)**2)

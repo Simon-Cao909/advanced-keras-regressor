@@ -3,6 +3,11 @@ from .estimator import SKGraphEstimator
 from sklearn.metrics import accuracy_score
 
 class SKGraphClassifier(SKGraphEstimator, ClassifierMixin):
+    '''
+    SKGraphRegressor is the classifier branch of SKGraphEstimator
+    The only thing different is that it now supports .score()
+    '''
+
     def score(self,X,y):
         '''
         Scores the model based on how it performs on given data
