@@ -175,7 +175,49 @@ class SKGraphEstimator(BaseEstimator):
         
         return callbacks
 
+    def _validate_data(self,X,y=None):
+        '''
+        Checks the data to see if it is of the proper format
 
+        :param X (array-like): The feature array
+        :param y (array-like, default=None): The labels array
+                                             If None, only the features
+                                             will be checked and returned
+
+        :return (np.ndarray or tuple of ndarrays): If y was given, returns X and y as an array
+                                                   Else, X will be returned as an array
+        '''
+        if len(self.output_shape_) <= 2 and len(self.input_shape_) <= 2:
+            if y is None:
+                X = check_array(X, accept_sparse=False, dtype=np.float32)
+                X = validate_data(self,X,reset=False)
+            else:
+                X, y = validate_data(
+                    self,
+                    X,
+                    y,
+                    multi_output=True,
+                    y_numeric=True,
+                    dtype=np.float32,
+                )
+        
+        if X.shape[1:] != self.input_shape_:
+            raise ValueError(
+                f"The features have {X.shape[1:]} shape, but this model was fitted with "
+                f"{self.input_shape_} input shape."
+            )
+        
+        if y is not None and self.output_shape_ != y.shape[1:]:
+            raise ValueError(
+                f"output_shape={self.output_shape_}, but y has shape {y.shape[1:]}"
+            )
+        
+        return np.asarray(X) if y is None else (np.asarray(X), np.asarray(y))
+
+    def _check_is_fitted(self):
+        check_is_fitted(self, "model_")
+
+        
     ### ADDING BLOCKS ###
 
     def _add_simple_block(self,layer_type,layer_specs,ind,x):
@@ -550,9 +592,8 @@ class SKGraphEstimator(BaseEstimator):
         '''
         if issparse(X):
             raise ValueError("Sparse input is not supported")
-
-        X = np.array(X)
-        y = np.array(y)
+        
+        X = np.asarray(X)
 
         if self.random_state is not None:
             keras.utils.set_random_seed(self.random_state)
@@ -560,32 +601,15 @@ class SKGraphEstimator(BaseEstimator):
         self.input_shape_ = self.input_shape if self.input_shape is not None else X.shape[1:]
 
         # Checks to see if the shapes are correct
-        if self.input_shape_ != X.shape[1:]:
-            raise ValueError(
-                f"input_shape={self.input_shape_}, but features have shape {X.shape[1:]}"
-            )
         
         self.model_ = self.build_model()
-
-        if len(self.output_shape_) <= 2 and len(self.input_shape_) <= 2:
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                multi_output=True,
-                y_numeric=True,
-                dtype=np.float32,
-            )
 
         # If y is of shape (n_samples,), we need it to be of shape (n_samples,1)
         self.y_was_1d_ = y.ndim == 1
         if y.ndim == 1:
             y = y.reshape(-1, 1)
         
-        if self.output_shape_ != y.shape[1:]:
-            raise ValueError(
-                f"output_shape={self.output_shape_}, but y has shape {y.shape[1:]}"
-            )
+        X,y = self._validate_data(X,y)
 
         callbacks = self._get_callbacks()
 
@@ -616,18 +640,8 @@ class SKGraphEstimator(BaseEstimator):
 
         :return (numpy.ndarray): The labels of shape (n_samples, ...) or (n_samples,)
         '''
-        check_is_fitted(self, "model_")
-        X = np.array(X)
-
-        if len(self.output_shape_) <= 2 and len(self.input_shape_) <= 2:
-            X = check_array(X, accept_sparse=False, dtype=np.float32)
-            X = validate_data(self,X,reset=False)
-
-        if X.shape[1:] != self.input_shape_:
-            raise ValueError(
-                f"The features have {X.shape[1:]} shape, but this model was fitted with "
-                f"{self.input_shape_} input shape."
-            )
+        self._check_is_fitted()
+        X = self._validate_data(X)
 
         pred = self.model_.predict(X, verbose=0)
 

@@ -80,6 +80,9 @@ class SKGraphAutoencoder(SKGraphEstimator):
 
         self.model_type = model_type
 
+
+    ### HELPER FUNCTIONS ###
+
     def _build_encoder(self):
         '''
         Builds the encoder half of the autoencoder using
@@ -106,9 +109,9 @@ class SKGraphAutoencoder(SKGraphEstimator):
                     encoder_outputs = latent
                 elif model_type == 'variational':
                     latent_mean = self._add_block(struct,ind,x)
-                    latent_log = self._add_block(struct,ind,x)
-                    latent = kl.Lambda(sampling)([latent_mean,latent_log])
-                    encoder_outputs = [latent_mean, latent_log, latent]
+                    log_var = self._add_block(struct,ind,x)
+                    latent = kl.Lambda(sampling)([latent_mean,log_var])
+                    encoder_outputs = [latent_mean, log_var, latent]
             else:
                 x = self._add_block(struct,ind,x)
         
@@ -128,6 +131,9 @@ class SKGraphAutoencoder(SKGraphEstimator):
 
         decoder_structs = self.decoder_structure
 
+        if self.build_setting == 'quick':
+            decoder_structs = parse_quick(decoder_structs)
+
         for ind, struct in enumerate(decoder_structs):
             if ind == len(decoder_structs) - 1:
                 decoded = self._add_block(struct,ind,x)
@@ -136,6 +142,44 @@ class SKGraphAutoencoder(SKGraphEstimator):
         
         self.output_shape_ = keras.backend.int_shape(decoded)[1:]
         self.decoder_ = keras.Model(inputs=decoder_inputs,outputs=decoded)
+
+    def _use_model(self,arr,which):
+        '''
+        Predicts using the encoder or decoder
+
+        :param arr (array-like): The input array for the encoder
+                                 or latent array for the decoder
+        :param which (str): The model to be used
+                            Must be either 'encoder' or 'decoder'
+        
+        :return (np.ndarray): The output of the model
+        '''
+        self._check_is_fitted()
+        arr = np.asarray(arr)
+
+        expec_shape = self.input_shape_ if which == 'encoder' else self.latent_shape_
+        model = self.model_.encoder if which == 'encoder' else self.model_.decoder
+
+        one_sample = arr.shape == expec_shape
+
+        if one_sample:
+            arr = arr[None]
+
+        if arr.shape[1:] != expec_shape:
+            raise ValueError(
+                f"The features have {arr.shape[1:]} shape, but this model was fitted with "
+                f"{self.input_shape_} input shape."
+            )
+        
+        output = model.predict(arr)
+
+        if which == 'encoder':
+            output = output[2]
+        
+        return output[0] if one_sample else output
+
+
+    ### SKLEARN METHODS ###
 
     def build_model(self):
         '''
@@ -170,17 +214,14 @@ class SKGraphAutoencoder(SKGraphEstimator):
 
         :return (self): The trained autoencoder
         '''
-        X = np.array(X)
+        X = np.asarray(X)
 
         if self.random_state is not None:
             keras.utils.set_random_seed(self.random_state)
 
         self.input_shape_ = self.input_shape if self.input_shape is not None else X.shape[1:]
 
-        if self.input_shape_ != X.shape[1:]:
-            raise ValueError(
-                f"input_shape={self.input_shape_}, but features have shape {X.shape[1:]}"
-            )
+        X = self._validate_data(X)
         
         self.model_ = self.build_model()
 
@@ -209,7 +250,7 @@ class SKGraphAutoencoder(SKGraphEstimator):
         self.validation_scores_ = history.history.get("val_loss")
 
         return self
-    
+        
     def score(self, X, y=None):
         '''
         Scores the model based on how it performs on given data
@@ -221,3 +262,32 @@ class SKGraphAutoencoder(SKGraphEstimator):
         '''
         pred = self.predict(X)
         return -np.mean((X - pred)**2)
+    
+    
+    ### AUTOENCODER SPECIFIC METHODS ###
+
+    def encode(self,X):
+        '''
+        Encodes the given input
+
+        :param X (array-like): The input array of shape (n_samples, *input_shape_)
+                               or input_shape_
+
+        :return (np.ndarray): The latent representation of X
+                              of shape (n_samples, *latent_shape_)
+                              or latent_shape_
+        '''
+        return self._use_model(X,'encoder')
+    
+    def decode(self,latent):
+        '''
+        Decodes the given latent representation
+
+        :param latent (array-like): The latent array of shape (n_samples, *latent_shape_)
+                                    or latent_shape_
+
+        :return (np.ndarray): The output of the decoder
+                              of shape (n_samples, *output_shape_)
+                              or output_shape_
+        '''
+        return self._use_model(latent,'decoder')

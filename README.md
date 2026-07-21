@@ -1,7 +1,16 @@
 # sk-graph-estimator
-SKGraphEstimator is a neural network builder that combines scikit-learn's user-friendly features with Keras's versatility. You can create very complex networks easily, allowing you to test vastly different architectures quickly and efficiently. Further, as it is a subclass of scikit-learn's BaseEstimator, it can be used in things like GridSearchCV.
+SKGraphEstimator is a graph-based neural network framework built on top of Keras that lets one describe complex architectures as composable graph blocks. It is also fully compatible with scikit-learn's estimator API
 
-# Example code
+## Features
+--
+Graph-based architecture DSL
+ResNet, Inception, and Xception
+Transfer learning
+Embed pre-trained scikit-learn regressors into neural networks
+Standard and variational autoencoders
+scikit-learn BaseEstimator compatibility
+
+## Example code
 ```python
 from sk_graph_estimator.estimator import SKGraphEstimator
 
@@ -37,7 +46,7 @@ model = SKGraphEstimator(model_structure=[
 ,epochs=20,learning_rate=5e-3,random_state=42)
 ```
 
-# Why I built this
+## Why I built this
 Often, when performing research, it's useful to test different machine learning models. Whether that be through tweaking the hyperparameters or changing your framework, it was interesting to see how different models performed.
 
 However, when trying to work with neural networks, I encountered a block. I either had to use sklearn's MLPRegressor, which significantly limits your ability, or attempt to work with KerasRegressor from scikeras, which still requires you to rewrite dozens of lines of code when attempting to use a different model architecture. Debugging was a chore, and for more complex networks like Inception, ResNet, and Xception, it was a pain to code and read.

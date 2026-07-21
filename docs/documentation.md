@@ -134,6 +134,24 @@ The required and optional attributes during initialization
 .predict()
 - Same as SKGraphEstimator
 
+.encode()
+- Encodes the given input
+- Parameters:
+    - X (array-like) - The input array of shape (n_samples, *input_shape_)
+                       or input_shape_
+- :return (np.ndarray): The latent representation of X
+                        of shape (n_samples, *latent_shape_)
+                        or latent_shape_
+
+.decode()
+- Decodes the given latent representation
+- Parameters:
+    - latent (array-like) - The latent array of shape (n_samples, *latent_shape_)
+                            or latent_shape_
+- :return (np.ndarray): The output of the decoder
+                        of shape (n_samples, *output_shape_)
+                        or output_shape_
+
 .score()
 - Returns the negative MSE score
 - Parameters
