@@ -2,7 +2,7 @@
 SKGraphEstimator is a graph-based neural network framework built on top of Keras that lets one describe complex architectures as composable graph blocks. It is also fully compatible with scikit-learn's estimator API
 
 ## Features
---
+
 Graph-based architecture DSL
 
 ResNet, Inception, and Xception

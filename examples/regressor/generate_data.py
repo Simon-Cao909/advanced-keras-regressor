@@ -11,3 +11,17 @@ def get_data():
     y += rng.normal(0, 0.2, size=n)
 
     return X,y
+
+def get_multi_output_data():
+    rng = np.random.default_rng(42)
+
+    n = 5000
+
+    X = rng.uniform(-3, 3, size=(n, 4))
+    y1 = np.sin(X[:,0]) + X[:,1]**2 - 0.5*X[:,2]*X[:,3] + 0.3*np.cos(2*X[:,3])
+    y2 = np.cos(X[:,0]) + X[:,1]**3 + 0.2*X[:,3]
+
+    y1 += rng.normal(0, 0.2, size=n)
+    y2 += rng.normal(0, 0.2, size=n)
+
+    return X,y1,y2
